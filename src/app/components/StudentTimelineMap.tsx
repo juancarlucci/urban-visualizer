@@ -11,6 +11,10 @@ import { loadSubwayStations, SubwayStation } from "@/lib/subwayStations";
 import { loadSubwayLines, SubwayLineFeature } from "@/lib/subwayLines";
 import { SCHOOL } from "@/lib/constants";
 import { Student } from "@/lib/studentsStore";
+import { StoreMutatorIdentifier } from "zustand";
+
+const trainPassing =
+  typeof Audio !== "undefined" ? new Audio("/sounds/subway-passing.mp3") : null;
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
@@ -32,14 +36,21 @@ export default function StudentTimelineMap() {
   }, []);
 
   useEffect(() => {
-    loadSubwayStations().then((loaded) => {
-      setStations(loaded);
-      if (students.length === 0) {
-        generateRandomStudents(loaded).then((generated) => {
-          setStudents(generated);
-        });
+    Promise.all([loadSubwayStations(), loadSubwayLines()]).then(
+      ([loadedStations, loadedLines]) => {
+        setStations(loadedStations);
+        setLines(loadedLines);
+        if (
+          students.length === 0 &&
+          loadedStations.length > 0 &&
+          loadedLines.length > 0
+        ) {
+          generateRandomStudents(13, loadedStations).then((generated) => {
+            setStudents(generated);
+          });
+        }
       }
-    });
+    );
   }, []);
 
   useEffect(() => {
@@ -118,6 +129,7 @@ export default function StudentTimelineMap() {
       getRadius: 120,
       radiusUnits: "meters",
       pickable: true,
+      getTooltip: ({ object }: { object: Student }) => object?.name,
       updateTriggers: {
         getPosition: [currentTime],
       },
