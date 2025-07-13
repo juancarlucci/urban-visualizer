@@ -14,9 +14,17 @@ export function getAnimatedPosition(
   const [x1, y1] = student.route[index];
   const [x2, y2] = student.route[nextIndex];
 
-  const localT = (student.route.length - 1) * time - index;
+  // const localT = (student.route.length - 1) * time - index;
+  // const adjustedTime = Math.max(
+  //   0,
+  //   Math.min(1, time - (student.startDelay ?? 0))
+  // );
+  const adjustedTime = time - (student.startDelay ?? 0);
+  if (adjustedTime <= 0) return [student.lng, student.lat];
+  if (adjustedTime >= 1)
+    return student.route?.at(-1) ?? [student.lng, student.lat];
 
-  return [x1 + (x2 - x1) * localT, y1 + (y2 - y1) * localT];
+  return [x1 + (x2 - x1) * adjustedTime, y1 + (y2 - y1) * adjustedTime];
 }
 
 export function getTrailPoints(
