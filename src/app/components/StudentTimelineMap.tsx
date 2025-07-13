@@ -159,7 +159,7 @@ export default function StudentTimelineMap() {
         <div className="flex justify-between items-center">
           <button
             onClick={() => setIsPlaying((p) => !p)}
-            className="bg-black text-white px-4 py-2 rounded shadow"
+            className="bg-gray-800 text-white px-4 py-2 rounded shadow"
           >
             {isPlaying ? "Pause" : "Play"}
           </button>
