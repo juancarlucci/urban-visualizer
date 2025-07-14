@@ -1,19 +1,21 @@
+//* src/lib/studentsStore.ts
+//* Zustand-based state management for storing and updating student data and animation time across the app.
+
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
-export type Transport = "walk" | "bike" | "car" | "subway";
 
 export interface Student {
   id: string;
   name: string;
   lat: number;
   lng: number;
-  mode: Transport;
   speed: number;
   color: string;
   currentTime?: number; //* 0.0 to 1.0
   route: [number, number][]; //* Array of [lat, lng] pairs representing the route
   startDelay: number; //* Delay before the student starts moving,
+  isFixed: boolean; //* Whether the student is fixed in place or can move
+  visitedPath: [number, number][]; //* Path the student has visited
 }
 
 interface StudentStore {
@@ -24,15 +26,10 @@ interface StudentStore {
   setTime: (t: number) => void;
 }
 
-export const useStudentStore = create<StudentStore>()(
-  persist(
-    (set) => ({
-      students: [],
-      addStudent: (s) => set((state) => ({ students: [...state.students, s] })),
-      setStudents: (s) => set({ students: s }),
-      currentTime: 0,
-      setTime: (t) => set({ currentTime: t }),
-    }),
-    { name: "student-store" }
-  )
-);
+export const useStudentStore = create<StudentStore>()((set) => ({
+  students: [],
+  addStudent: (s) => set((state) => ({ students: [...state.students, s] })),
+  setStudents: (s) => set({ students: s }),
+  currentTime: 0,
+  setTime: (t) => set({ currentTime: t }),
+}));
