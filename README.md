@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+### 📘 NYC Student Routing Map Simulator
 
-## Getting Started
+#### 🌟 Purpose
 
-First, run the development server:
+This project simulates 100,000 students commuting to school through NYC's subway system using real geospatial data. It demonstrates:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+* Applied pathfinding algorithms (A\* and Dijkstra)
+* Real-time spatial rendering via Deck.gl and Mapbox
+* Performance state management with Zustand
+* UI engineering and animation for user feedback
+* System-level thinking for large-scale geospatial search
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+#### 🧠 Learning Goals
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+* Master geospatial A\*/Dijkstra on real subway graphs
+* Visualize massive-scale data (100K routes, 500 shown)
+* Optimize React + Zustand state architecture
+* Animate student travel across a real-time timeline
+* Prepare for system design discussions around:
 
-## Learn More
+  * Spatial indexes
+  * Memoization and caching
+  * Debug transparency for algorithms
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+#### 🛠️ Architecture Overview
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Layer            | Stack/Details                              |
+| ---------------- | ------------------------------------------ |
+| Frontend         | Next.js (App Router), TypeScript, Tailwind |
+| Map Rendering    | Deck.GL + Mapbox                           |
+| State Management | Zustand with useRef caching                |
+| Graph Logic      | Custom A\*/Dijkstra using subway GeoJSON   |
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+#### 📂 Key Components
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| File                     | Description                                           |
+| ------------------------ | ----------------------------------------------------- |
+| `StudentTimelineMap.tsx` | Controls timeline, routing logic, UI state            |
+| `generateStudents.ts`    | Generates students' paths and visited nodes           |
+| `subwayGraph.ts`         | Subway graph builder + pathfinding engine             |
+| `MapLayers.tsx`          | Deck.GL render: subway, students, trails, debug paths |
+| `TimelineControls.tsx`   | UI panel: algorithm toggle, time slider, play/pause   |
+| `studentsStore.ts`       | Zustand store: time, selected students                |
+
+---
+
+#### 📊 Features
+
+* **Routing algorithm toggle**: A\* vs Dijkstra
+* **Animated travel simulation**: with fading trails
+* **Subway visualization**: lines, homes, school
+* **Live stats**: average visited nodes, routing mode
+* **Time control**: 6 AM → 3 PM, or reverse
+
+---
+
+#### 🚀 Performance & UX
+
+* Memo cache per algorithm via `useRef`
+* Lazy-load first 500 students for speed
+* Animate via frame-based requestAnimationFrame
+* Toggleable debug edges to inspect algorithm output
+* Smooth Deck.GL rendering with dynamic radius, color
+
+---
+
+#### 🔬 Future Enhancements
+
+1. Persist full student routing cache (across toggles)
+2. Add step-debug visualizer for algorithm progression
+3. Viewport-based lazy rendering of visited paths
+4. Enhanced tooltips with student metrics
+5. Build out system design doc (caching, clustering, quadtree)
+
+---
+
+#### 🛠️ Tech Stack
+
+* `Next.js` (App Router)
+* `TypeScript`
+* `Zustand`
+* `Deck.GL`, `Mapbox GL JS`
+* `Tailwind CSS`
+
+---
+
+For questions, demos, or walk-throughs, see `StudentTimelineMap.tsx` or run `npm run dev` with your Mapbox token. 
