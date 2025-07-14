@@ -12,6 +12,12 @@ import { MapLayers } from "./MapLayers";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
+type CacheResult = {
+  students: Student[];
+  debugEdges: [number, number][][];
+  totalVisited: number;
+};
+
 export default function StudentTimelineMap() {
   const students = useStudentStore((s) => s.students);
   const setStudents = useStudentStore((s) => s.setStudents);
@@ -29,19 +35,13 @@ export default function StudentTimelineMap() {
   const [isReverse, setIsReverse] = useState(false);
   const [totalVisited, setTotalVisited] = useState(0);
   const [studentCount, setStudentCount] = useState(0);
-  const cacheRef = useRef<{
-    dijkstra?: {
-      students: Student[];
-      debugEdges: [number, number][][];
-      totalVisited: number;
-    };
-    astar?: {
-      students: Student[];
-      debugEdges: [number, number][][];
-      totalVisited: number;
-    };
-  }>({});
   const [isLoading, setIsLoading] = useState(false);
+  const cacheRef = useRef<
+    Record<"dijkstra" | "astar", CacheResult | undefined>
+  >({
+    dijkstra: undefined,
+    astar: undefined,
+  });
 
   useEffect(() => {
     loadSubwayLines().then((loaded) => setLines(loaded));
