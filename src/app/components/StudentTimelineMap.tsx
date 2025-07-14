@@ -3,18 +3,12 @@
 import { useEffect, useState, useRef } from "react";
 import DeckGL from "@deck.gl/react";
 import { Map } from "react-map-gl";
-import { PathLayer, ScatterplotLayer } from "@deck.gl/layers";
 import { useStudentStore } from "@/lib/studentsStore";
 import { generateRandomStudents } from "@/lib/generateStudents";
-import { getAnimatedPosition, getTrailPoints } from "@/lib/animate";
 import { loadSubwayStations, SubwayStation } from "@/lib/subwayStations";
 import { loadSubwayLines, SubwayLineFeature } from "@/lib/subwayLines";
-import { SCHOOL } from "@/lib/constants";
-import { Student } from "@/lib/studentsStore";
-import { StoreMutatorIdentifier } from "zustand";
-
-const trainPassing =
-  typeof Audio !== "undefined" ? new Audio("/sounds/subway-passing.mp3") : null;
+import TimelineControls from "./TimelineControls";
+import { MapLayers } from "./MapLayers";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
@@ -30,14 +24,48 @@ export default function StudentTimelineMap() {
   const [lines, setLines] = useState<SubwayLineFeature[]>([]);
   const animationRef = useRef<number | null>(null);
   const timeRef = useRef(currentTime);
+  const [algorithm, setAlgorithm] = useState<"dijkstra" | "astar">("dijkstra");
+  const [debugEdges, setDebugEdges] = useState<[number, number][][]>([]);
+  const [isReverse, setIsReverse] = useState(false);
+  const [totalVisited, setTotalVisited] = useState(0);
+  const [studentCount, setStudentCount] = useState(0);
+  const cacheRef = useRef<{
+    dijkstra?: {
+      students: Student[];
+      debugEdges: [number, number][][];
+      totalVisited: number;
+    };
+    astar?: {
+      students: Student[];
+      debugEdges: [number, number][][];
+      totalVisited: number;
+    };
+  }>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     loadSubwayLines().then((loaded) => setLines(loaded));
   }, []);
 
   useEffect(() => {
-    Promise.all([loadSubwayStations(), loadSubwayLines()]).then(
-      ([loadedStations, loadedLines]) => {
+    if (stations.length > 0 && lines.length > 0) {
+      generateRandomStudents(100000, stations, algorithm).then(
+        ({ students, debugEdges }) => {
+          setStudents(students.slice(0, 500)); // show only 500 animated
+          setDebugEdges(debugEdges);
+          setTotalVisited(
+            students.reduce((sum, s) => sum + (s.visitedPath?.length || 0), 0)
+          );
+          setStudentCount(students.length);
+        }
+      );
+    }
+  }, [algorithm]); // Regenerate on algorithm switch
+
+  useEffect(() => {
+    setIsLoading(true);
+    Promise.all([loadSubwayStations(), loadSubwayLines()])
+      .then(([loadedStations, loadedLines]) => {
         setStations(loadedStations);
         setLines(loadedLines);
         if (
@@ -45,12 +73,35 @@ export default function StudentTimelineMap() {
           loadedStations.length > 0 &&
           loadedLines.length > 0
         ) {
-          generateRandomStudents(13, loadedStations).then((generated) => {
-            setStudents(generated);
-          });
+          if (cacheRef.current[algorithm]) {
+            const { students, debugEdges, totalVisited } =
+              cacheRef.current[algorithm]!;
+            setStudents(students.slice(0, 500));
+            setDebugEdges(debugEdges);
+            setTotalVisited(totalVisited);
+            setStudentCount(students.length);
+          } else {
+            generateRandomStudents(100000, stations, algorithm).then(
+              ({ students, debugEdges }) => {
+                const totalVisited = students.reduce(
+                  (sum, s) => sum + (s.visitedPath?.length || 0),
+                  0
+                );
+                cacheRef.current[algorithm] = {
+                  students,
+                  debugEdges,
+                  totalVisited,
+                };
+                setStudents(students.slice(0, 500));
+                setDebugEdges(debugEdges);
+                setTotalVisited(totalVisited);
+                setStudentCount(students.length);
+              }
+            );
+          }
         }
-      }
-    );
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -81,70 +132,7 @@ export default function StudentTimelineMap() {
     };
   }, [isPlaying, setTime]);
 
-  const layers = [
-    new PathLayer({
-      id: "subway-lines",
-      data: lines,
-      getPath: (d) => d.geometry.coordinates,
-      getWidth: 4,
-      getColor: () => [30, 144, 255, 160],
-      widthUnits: "pixels",
-      pickable: true,
-    }),
-
-    new ScatterplotLayer({
-      id: "student-homes",
-      data: students,
-      getPosition: (d) => d.route?.[0] ?? [d.lng, d.lat],
-      getFillColor: (d) => hexToRgb(d.color, 100),
-      getRadius: 60,
-      radiusUnits: "meters",
-      pickable: false,
-    }),
-
-    new ScatterplotLayer({
-      id: `student-trails-${currentTime}`,
-      data: Array.isArray(students)
-        ? students.flatMap((student) =>
-            getTrailPoints(student, currentTime).map((pos, i) => ({
-              ...student,
-              lat: pos[1],
-              lng: pos[0],
-              alpha: Math.max(60 - i * 6, 0),
-            }))
-          )
-        : [],
-      getPosition: (d) => [d.lng, d.lat],
-      getFillColor: (d) => hexToRgb(d.color, d.alpha),
-      getRadius: 80,
-      radiusUnits: "meters",
-      pickable: false,
-    }),
-
-    new ScatterplotLayer({
-      id: `students-animated-${currentTime}`,
-      data: students,
-      getPosition: (d) => getAnimatedPosition(d, currentTime),
-      getFillColor: (d) => hexToRgb(d.color, 255),
-      getRadius: 120,
-      radiusUnits: "meters",
-      pickable: true,
-      getTooltip: ({ object }: { object: Student }) => object?.name,
-      updateTriggers: {
-        getPosition: [currentTime],
-      },
-    }),
-
-    new ScatterplotLayer({
-      id: "school-location",
-      data: [{ position: [SCHOOL.lng, SCHOOL.lat] }],
-      getPosition: (d) => d.position,
-      getFillColor: [0, 0, 0, 200],
-      getRadius: 140,
-      radiusUnits: "meters",
-      pickable: false,
-    }),
-  ];
+  const layers = MapLayers({ students, lines, currentTime, debugEdges });
 
   return (
     <div className="relative h-screen w-full">
@@ -167,64 +155,37 @@ export default function StudentTimelineMap() {
         />
       </DeckGL>
 
-      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-11/12 max-w-xl bg-white/90 p-4 rounded shadow space-y-2">
-        <div className="flex justify-between items-center">
-          <button
-            onClick={() => setIsPlaying((p) => !p)}
-            className="bg-gray-800 text-white px-4 py-2 rounded shadow"
-          >
-            {isPlaying ? "Pause" : "Play"}
-          </button>
-          <span className="text-sm font-medium text-gray-700">
-            Time of Day: {formatTime(currentTime, students)}
-          </span>
-          <button
-            onClick={() => {
-              setStudents(
-                students.map((s) => ({
-                  ...s,
-                  route: s.route.slice().reverse(),
-                }))
-              );
-              setTime(0);
-              timeRef.current = 0;
-            }}
-            className="bg-gray-800 text-white px-4 py-2 rounded shadow"
-          >
-            Reverse Commute
-          </button>
-        </div>
-
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={Number.isFinite(currentTime) ? currentTime : 0}
-          onChange={(e) => setTime(parseFloat(e.target.value))}
-          className="w-full"
-        />
+      <div className="flex absolute bottom-10 left-1/2 transform -translate-x-1/2 w-11/12 max-w-xl bg-white/90 p-4 rounded shadow space-y-2 z-50">
+        <TimelineControls
+          isPlaying={isPlaying}
+          onPlayPause={() => setIsPlaying((p) => !p)}
+          onReverse={() => {
+            setIsReverse((prev) => !prev);
+            setStudents(
+              students.map((s) => ({
+                ...s,
+                route: s.route.slice().reverse(), //* slice() to avoid mutating original route
+              }))
+            );
+            setTime(0);
+            timeRef.current = 0;
+          }}
+          currentTime={currentTime}
+          onTimeChange={(t) => setTime(t)}
+          algorithm={algorithm}
+          setAlgorithm={setAlgorithm}
+          isReverse={isReverse}
+        >
+          <div className="text-sm font-medium text-gray-800">
+            Routing with: {algorithm.toUpperCase()} <br />
+            {isLoading
+              ? "Calculating paths..."
+              : `Avg. visited nodes: ${(totalVisited / studentCount).toFixed(
+                  1
+                )}`}
+          </div>
+        </TimelineControls>
       </div>
     </div>
   );
-}
-
-function hexToRgb(hex: string, alpha = 255): [number, number, number, number] {
-  const bigint = parseInt(hex.replace("#", ""), 16);
-  const r = (bigint >> 16) & 255;
-  const g = (bigint >> 8) & 255;
-  const b = bigint & 255;
-  return [r, g, b, alpha];
-}
-
-function formatTime(time: number, students: Student[]): string {
-  const isAfternoon = students.some((s) => s.route?.[0]?.[0] === SCHOOL.lng);
-  const startMinutes = isAfternoon ? 15 * 60 + 45 : 6 * 60;
-  const endMinutes = isAfternoon ? 16 * 60 + 55 : 8 * 60;
-  const totalMinutes = startMinutes + time * (endMinutes - startMinutes);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = Math.floor(totalMinutes % 60);
-  return `${hours}:${minutes.toString().padStart(2, "0")} ${
-    hours >= 12 ? "PM" : "AM"
-  }`;
 }
