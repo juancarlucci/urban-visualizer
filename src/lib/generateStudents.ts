@@ -1,6 +1,14 @@
+//* src/lib/generateStudents.ts
+//* Generates random student data with routes based on subway stations and lines.
+//* Core to simulating student movements in the subway system.
+
 import { Student } from "./studentsStore";
 import { findNearestStation } from "./geoUtils";
-import { buildSubwayGraph, findShortestPath } from "./subwayGraph";
+import {
+  buildSubwayGraph,
+  findShortestPath,
+  findShortestPathAstar,
+} from "./subwayGraph";
 import { loadSubwayLines } from "./subwayLines";
 import { SCHOOL } from "./constants";
 import { SubwayStation } from "./subwayStations";
@@ -25,19 +33,23 @@ const boroughNamePool = {
 };
 
 export async function generateRandomStudents(
-  count = 13,
-  stations: SubwayStation[]
-): Promise<Student[]> {
+  count = 100000,
+  stations: SubwayStation[],
+  algorithm: "dijkstra" | "astar" = "dijkstra" // default to Dijkstra unless specified
+): Promise<{ students: Student[]; debugEdges: [number, number][][] }> {
   if (!Array.isArray(stations) || stations.length === 0) {
     console.error(
       "❌ Invalid or empty station list passed to generateRandomStudents"
     );
-    return [];
+    return { students: [], debugEdges: [] };
   }
 
   const students: Student[] = [];
+  const sampledStudents = students
+    .sort(() => 0.5 - Math.random())
+    .slice(0, 500);
   const lines = await loadSubwayLines();
-  const graph = buildSubwayGraph(stations, lines);
+  const { graph, debugEdges } = buildSubwayGraph(stations, lines);
 
   // Create a properly routed subway student "Alex"
   const alexHome: [number, number] = [-73.9497, 40.7616];
@@ -46,28 +58,30 @@ export async function generateRandomStudents(
   let alexRoute: [number, number][] = [alexHome, [SCHOOL.lng, SCHOOL.lat]];
 
   if (alexStart && alexEnd) {
-    const path = findShortestPath(graph, alexStart.id, alexEnd.id);
-    if (path.length > 0) {
+    const [alexPath, alexVisited] =
+      algorithm === "astar"
+        ? findShortestPathAstar(graph, alexStart.id, alexEnd.id)
+        : findShortestPath(graph, alexStart.id, alexEnd.id);
+    if (alexPath.length > 0) {
       alexRoute = [
         alexHome,
-        ...path.map((s) => s.coordinates),
+        ...alexPath.map((s) => s.coordinates),
         [SCHOOL.lng, SCHOOL.lat],
       ];
     }
+    students.push({
+      id: "alex-1",
+      name: "Alex",
+      lat: alexHome[1],
+      lng: alexHome[0],
+      speed: 1,
+      color: "#d7263d",
+      route: alexRoute,
+      startDelay: Math.random() * 0.2,
+      isFixed: false,
+      visitedPath: alexVisited.map((s) => s.coordinates),
+    });
   }
-
-  students.push({
-    id: "alex-1",
-    name: "Alex",
-    lat: alexHome[1],
-    lng: alexHome[0],
-    mode: "subway",
-    speed: 1,
-    color: "#d7263d",
-    route: alexRoute,
-    startDelay: Math.random() * 0.2,
-    isFixed: false,
-  });
 
   const boroughs = Object.keys(boroughBounds) as (keyof typeof boroughBounds)[];
 
@@ -83,38 +97,42 @@ export async function generateRandomStudents(
     let route: [number, number][] = [];
 
     if (startStation && endStation) {
-      const path = findShortestPath(graph, startStation.id, endStation.id);
+      const [path, visited] =
+        algorithm === "astar"
+          ? findShortestPathAstar(graph, startStation.id, endStation.id)
+          : findShortestPath(graph, startStation.id, endStation.id);
+
       if (path.length >= 2) {
         route = [
           home,
-          ...path.map((station) => station.coordinates),
+          ...path.map(
+            (station: { coordinates: [number, number] }) => station.coordinates
+          ),
           [SCHOOL.lng, SCHOOL.lat],
         ];
       } else {
         route = [home, [SCHOOL.lng, SCHOOL.lat]];
       }
-    } else {
-      route = [home, [SCHOOL.lng, SCHOOL.lat]];
+
+      const pool = boroughNamePool[borough];
+      const name = pool[Math.floor(Math.random() * pool.length)];
+
+      students.push({
+        id: `s-${students.length - 1}`,
+        name,
+        lat: studentLat,
+        lng: studentLng,
+        speed: 1,
+        color: colors[students.length % colors.length],
+        route,
+        startDelay: Math.random() * 0.2,
+        isFixed: false,
+        visitedPath: visited.map((s) => s.coordinates),
+      });
     }
-
-    const pool = boroughNamePool[borough];
-    const name = pool[Math.floor(Math.random() * pool.length)];
-
-    students.push({
-      id: `s-${students.length - 1}`,
-      name,
-      lat: studentLat,
-      lng: studentLng,
-      mode: "subway",
-      speed: 1,
-      color: colors[students.length % colors.length],
-      route,
-      startDelay: Math.random() * 0.2,
-      isFixed: false,
-    });
   }
 
-  return students;
+  return { students, debugEdges };
 }
 
 function randomBetween(min: number, max: number): number {
