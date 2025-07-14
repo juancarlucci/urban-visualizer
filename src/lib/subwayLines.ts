@@ -1,4 +1,6 @@
 //* src/lib/subwayLines.ts
+//* Loads and parses the NYC subway line GeoJSON file. Used to render subway routes and build the graph.
+
 
 export interface SubwayLineFeature {
   type: "Feature";
