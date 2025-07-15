@@ -2,7 +2,6 @@
 //* Zustand-based state management for storing and updating student data and animation time across the app.
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 export interface Student {
   id: string;

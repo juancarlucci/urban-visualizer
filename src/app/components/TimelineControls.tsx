@@ -11,6 +11,8 @@ export default function TimelineControls({
   algorithm,
   setAlgorithm,
   isReverse,
+  showVisited,
+  setShowVisited,
 }: {
   children?: React.ReactNode;
   isPlaying: boolean;
@@ -21,6 +23,8 @@ export default function TimelineControls({
   algorithm: "dijkstra" | "astar";
   setAlgorithm: (a: "dijkstra" | "astar") => void;
   isReverse: boolean;
+  showVisited: boolean;
+  setShowVisited: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   return (
     <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-11/12 max-w-xl bg-white/90 p-4 rounded shadow space-y-2">
@@ -40,6 +44,12 @@ export default function TimelineControls({
         >
           Reverse
         </button>
+        <input
+          type="checkbox"
+          checked={showVisited}
+          onChange={() => setShowVisited((prev) => !prev)}
+        />
+        <label>Show visited</label>
         <select
           value={algorithm}
           onChange={(e) => setAlgorithm(e.target.value as "dijkstra" | "astar")}

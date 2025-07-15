@@ -33,7 +33,7 @@ const boroughNamePool = {
 };
 
 export async function generateRandomStudents(
-  count = 100000,
+  count = 13,
   stations: SubwayStation[],
   algorithm: "dijkstra" | "astar" = "dijkstra" // default to Dijkstra unless specified
 ): Promise<{ students: Student[]; debugEdges: [number, number][][] }> {
@@ -133,6 +133,25 @@ export async function generateRandomStudents(
   }
 
   return { students, debugEdges };
+}
+export function generateInitialStudents(
+  stations: SubwayStation[],
+  algorithm: "astar" | "dijkstra"
+): Promise<{
+  students: Student[];
+  debugEdges: [number, number][][];
+}> {
+  return generateRandomStudents(15, stations, algorithm);
+}
+
+export function generateFullStudentSet(
+  stations: SubwayStation[],
+  algorithm: "astar" | "dijkstra"
+): Promise<{
+  students: Student[];
+  debugEdges: [number, number][][];
+}> {
+  return generateRandomStudents(10000, stations, algorithm);
 }
 
 function randomBetween(min: number, max: number): number {

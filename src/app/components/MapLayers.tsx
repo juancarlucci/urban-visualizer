@@ -7,6 +7,7 @@ import type { Student } from "@/lib/studentsStore";
 import { getAnimatedPosition, getTrailPoints } from "@/lib/animate";
 import { SCHOOL } from "@/lib/constants";
 import type { SubwayLineFeature } from "@/lib/subwayLines";
+import { SubwayStation } from "@/lib/subwayStations";
 
 //* Converts a hex color like "#ff0000" into an [R, G, B, A] array for Deck.GL fill styling
 function hexToRgb(hex: string, alpha = 255): [number, number, number, number] {
@@ -20,13 +21,32 @@ function hexToRgb(hex: string, alpha = 255): [number, number, number, number] {
 interface Props {
   students: Student[];
   lines: SubwayLineFeature[];
+  stations: SubwayStation[];
+  visitedNodes: number[];
   currentTime: number;
-  debugEdges?: [number, number][][]; // Optional for debugging purposes
+  debugEdges?: [number, number][][];
 }
 
 //* Main export: returns an array of Deck.GL layers to be rendered in <DeckGL />
-export function MapLayers({ students, lines, currentTime, debugEdges }: Props) {
+export function MapLayers({
+  students,
+  lines,
+  stations,
+  visitedNodes,
+  currentTime,
+  debugEdges = [],
+}: Props) {
   return [
+    new ScatterplotLayer({
+      id: "visited-nodes",
+      data: visitedNodes
+        .map((id) => stations.find((s) => String(s.id) === String(id)))
+        .filter(Boolean),
+      getPosition: (d) => [d.lng, d.lat],
+      getFillColor: [255, 0, 0, 80], // dark red, semi-transparent
+      radiusMinPixels: 3,
+      pickable: false,
+    }),
     //* Debug edges for visualization, shown as thin gray paths
     new PathLayer({
       id: "debug-edges",
@@ -57,15 +77,15 @@ export function MapLayers({ students, lines, currentTime, debugEdges }: Props) {
       pickable: false,
     }),
     //* Subway network paths
-    // new PathLayer({
-    //   id: "subway-lines",
-    //   data: lines, // Array of subway line features. Data looks like: { geometry: { coordinates: [[lng, lat], ...] } }
-    //   getPath: (d) => d.geometry.coordinates,
-    //   getWidth: 4,
-    //   getColor: () => [30, 144, 255, 160],
-    //   widthUnits: "pixels",
-    //   pickable: true,
-    // }),
+    new PathLayer({
+      id: "subway-lines",
+      data: lines, // Array of subway line features. Data looks like: { geometry: { coordinates: [[lng, lat], ...] } }
+      getPath: (d) => d.geometry.coordinates,
+      getWidth: 4,
+      getColor: () => [30, 144, 255, 160],
+      widthUnits: "pixels",
+      pickable: true,
+    }),
     //* Student homes (fixed points)
     new ScatterplotLayer({
       id: "student-homes",
@@ -105,7 +125,8 @@ export function MapLayers({ students, lines, currentTime, debugEdges }: Props) {
       updateTriggers: {
         getPosition: [currentTime],
       },
-      getTooltip: ({ object }) => (object?.name ? `${object.name}` : null), // tooltip shows student name
+      getTooltip: ({ object }: { object: { name?: string } }) =>
+        object?.name ? `${object.name}` : null,
     }),
     //* School location icon (fixed black dot)
     new ScatterplotLayer({
