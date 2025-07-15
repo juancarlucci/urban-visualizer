@@ -15,6 +15,7 @@ export interface Student {
   startDelay: number; //* Delay before the student starts moving,
   isFixed: boolean; //* Whether the student is fixed in place or can move
   visitedPath: [number, number][]; //* Path the student has visited
+  home: [number, number]; // [lng, lat]
 }
 
 interface StudentStore {
