@@ -11,7 +11,10 @@
   "dependencies": {
     "@deck.gl/core": "^9.1.13",
     "@deck.gl/layers": "^9.1.13",
+    "@deck.gl/mesh-layers": "^9.1.13",
     "@deck.gl/react": "^9.1.13",
+    "@loaders.gl/core": "^4.3.4",
+    "@loaders.gl/gltf": "^4.3.4",
     "@turf/turf": "^7.2.0",
     "leaflet": "^1.9.4",
     "leaflet.animatedmarker": "^1.0.0",
