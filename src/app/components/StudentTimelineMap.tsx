@@ -49,18 +49,34 @@ export default function StudentTimelineMap() {
 
   useEffect(() => {
     if (stations.length > 0 && lines.length > 0) {
-      generateRandomStudents(100000, stations, algorithm).then(
-        ({ students, debugEdges }) => {
-          setStudents(students.slice(0, 500)); // show only 500 animated
-          setDebugEdges(debugEdges);
-          setTotalVisited(
-            students.reduce((sum, s) => sum + (s.visitedPath?.length || 0), 0)
-          );
-          setStudentCount(students.length);
-        }
-      );
+      const cached = cacheRef.current[algorithm];
+      if (cached) {
+        setStudents(cached.students.slice(0, 500));
+        setDebugEdges(cached.debugEdges);
+        setTotalVisited(cached.totalVisited);
+        setStudentCount(cached.students.length);
+      } else {
+        setIsLoading(true);
+        generateRandomStudents(100000, stations, algorithm).then(
+          ({ students, debugEdges }) => {
+            const totalVisited = students.reduce(
+              (sum, s) => sum + (s.visitedPath?.length || 0),
+              0
+            );
+            const result = { students, debugEdges, totalVisited };
+            cacheRef.current[algorithm] = result;
+
+            setStudents(students.slice(0, 500));
+            setDebugEdges(debugEdges);
+            setTotalVisited(totalVisited);
+            setStudentCount(students.length);
+            setIsLoading(false);
+          }
+        );
+      }
     }
-  }, [algorithm]); // Regenerate on algorithm switch
+    // ESLint-safe dependency list
+  }, [algorithm, stations.length, lines.length, setStudents]);
 
   useEffect(() => {
     setIsLoading(true);
