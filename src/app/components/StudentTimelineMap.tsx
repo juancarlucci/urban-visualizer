@@ -80,46 +80,60 @@ export default function StudentTimelineMap() {
 
   useEffect(() => {
     setIsLoading(true);
+
     Promise.all([loadSubwayStations(), loadSubwayLines()])
       .then(([loadedStations, loadedLines]) => {
         setStations(loadedStations);
         setLines(loadedLines);
+
         if (
           students.length === 0 &&
           loadedStations.length > 0 &&
           loadedLines.length > 0
         ) {
           const cached = cacheRef.current[algorithm];
+
           if (cached) {
             setStudents(cached.students.slice(0, 500));
             setDebugEdges(cached.debugEdges);
             setTotalVisited(cached.totalVisited);
             setStudentCount(cached.students.length);
+            setIsLoading(false);
           } else {
-            generateRandomStudents(100000, loadedStations, algorithm).then(
-              ({ students, debugEdges }) => {
-                const totalVisited = students.reduce(
-                  (sum, s) => sum + (s.visitedPath?.length || 0),
-                  0
-                );
-                const result = { students, debugEdges, totalVisited };
-                cacheRef.current[algorithm] = result;
+            generateRandomStudents(100, loadedStations, algorithm).then(
+              ({ students: smallSet }) => {
+                setStudents(smallSet);
+                setDebugEdges([]);
+                setTotalVisited(0);
+                setStudentCount(smallSet.length);
+                setIsLoading(true);
 
-                setStudents(students.slice(0, 500));
-                setDebugEdges(debugEdges);
-                setTotalVisited(totalVisited);
-                setStudentCount(students.length);
+                generateRandomStudents(100000, loadedStations, algorithm).then(
+                  ({ students, debugEdges }) => {
+                    const totalVisited = students.reduce(
+                      (sum, s) => sum + (s.visitedPath?.length || 0),
+                      0
+                    );
+                    const result = { students, debugEdges, totalVisited };
+                    cacheRef.current[algorithm] = result;
+
+                    setStudents(students.slice(0, 500));
+                    setDebugEdges(debugEdges);
+                    setTotalVisited(totalVisited);
+                    setStudentCount(students.length);
+                    setIsLoading(false);
+                  }
+                );
               }
             );
           }
         }
       })
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  useEffect(() => {
-    timeRef.current = currentTime;
-  }, [currentTime]);
+      .catch((err) => {
+        console.error("Error loading subway data:", err);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [algorithm, setStudents]);
 
   useEffect(() => {
     if (isPlaying) {
