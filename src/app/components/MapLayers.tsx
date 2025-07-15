@@ -43,8 +43,8 @@ export function MapLayers({
         .map((id) => stations.find((s) => String(s.id) === String(id)))
         .filter(Boolean),
       getPosition: (d) => [d.lng, d.lat],
-      getFillColor: [255, 0, 0, 80], // dark red, semi-transparent
-      radiusMinPixels: 3,
+      getFillColor: [255, 0, 0, 180], // brighter red
+      radiusMinPixels: 5,
       pickable: false,
     }),
     //* Debug edges for visualization, shown as thin gray paths
@@ -77,20 +77,20 @@ export function MapLayers({
       pickable: false,
     }),
     //* Subway network paths
-    new PathLayer({
-      id: "subway-lines",
-      data: lines, // Array of subway line features. Data looks like: { geometry: { coordinates: [[lng, lat], ...] } }
-      getPath: (d) => d.geometry.coordinates,
-      getWidth: 4,
-      getColor: () => [30, 144, 255, 160],
-      widthUnits: "pixels",
-      pickable: true,
-    }),
+    // new PathLayer({
+    //   id: "subway-lines",
+    //   data: lines, // Array of subway line features. Data looks like: { geometry: { coordinates: [[lng, lat], ...] } }
+    //   getPath: (d) => d.geometry.coordinates,
+    //   getWidth: 4,
+    //   getColor: () => [30, 144, 255, 160],
+    //   widthUnits: "pixels",
+    //   pickable: true,
+    // }),
     //* Student homes (fixed points)
     new ScatterplotLayer({
       id: "student-homes",
       data: students,
-      getPosition: (d) => d.route?.[0] ?? [d.lng, d.lat],
+      getPosition: (d) => d.home,
       getFillColor: (d) => hexToRgb(d.color, 100),
       getRadius: 60,
       radiusUnits: "meters",
