@@ -11,6 +11,8 @@ export default function TimelineControls({
   currentTime,
   onTimeChange,
   isReverse,
+  onDragStart,
+  onDragEnd,
 }: {
   children?: React.ReactNode;
   isPlaying: boolean;
@@ -19,6 +21,8 @@ export default function TimelineControls({
   currentTime: number;
   onTimeChange: (t: number) => void;
   isReverse: boolean;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
 }) {
   const handleRangeInteraction = (e: ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
@@ -57,8 +61,10 @@ export default function TimelineControls({
           step={0.01}
           value={currentTime}
           onChange={handleRangeInteraction}
-          onPointerDown={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
+          onMouseDown={() => onDragStart?.()}
+          onMouseUp={() => onDragEnd?.()}
+          onTouchStart={() => onDragStart?.()}
+          onTouchEnd={() => onDragEnd?.()}
           className="w-full cursor-pointer"
           style={{ pointerEvents: "auto" }} // Ensure slider is interactive
         />
