@@ -13,6 +13,7 @@ import { loadSubwayLines, SubwayLineFeature } from "@/lib/subwayLines";
 import TimelineControls from "./TimelineControls";
 import { MapLayers } from "./MapLayers";
 import type { Student } from "@/lib/studentsStore";
+import AlgorithmControls from "./AlgorithmControls";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
@@ -194,7 +195,12 @@ export default function StudentTimelineMap() {
           mapStyle="mapbox://styles/juancarlucci/cj4ixk05q1a3x2spb44qq9cy3"
         />
       )}
-
+      <AlgorithmControls
+        algorithm={algorithm}
+        setAlgorithm={setAlgorithm}
+        showVisited={showVisited}
+        setShowVisited={setShowVisited}
+      />
       <TimelineControls
         isPlaying={isPlaying}
         onPlayPause={() => setIsPlaying((p) => !p)}
@@ -211,11 +217,7 @@ export default function StudentTimelineMap() {
         }}
         currentTime={currentTime}
         onTimeChange={setTime}
-        algorithm={algorithm}
-        setAlgorithm={setAlgorithm}
         isReverse={isReverse}
-        showVisited={showVisited}
-        setShowVisited={setShowVisited}
       >
         <div className="text-sm font-medium text-gray-800">
           Routing with: {algorithm.toUpperCase()} <br />
