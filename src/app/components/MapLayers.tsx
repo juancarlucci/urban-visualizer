@@ -2,7 +2,9 @@
 //* This component defines all Deck.GL layers for rendering subway lines, student routes, homes, and the school.
 //* It promotes separation of concerns by isolating map visuals from map logic.
 
-import { PathLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { ColumnLayer, PathLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { SimpleMeshLayer } from "@deck.gl/mesh-layers";
+import { GLTFLoader } from "@loaders.gl/gltf";
 import type { Student } from "@/lib/studentsStore";
 import { getAnimatedPosition, getTrailPoints } from "@/lib/animate";
 import { SCHOOL } from "@/lib/constants";
@@ -86,14 +88,36 @@ export function MapLayers({
     //   widthUnits: "pixels",
     //   pickable: true,
     // }),
+    new PathLayer({
+      id: "subway-lines",
+      data: lines,
+      getPath: (d) => d.geometry.coordinates,
+      getColor: () => [30, 144, 255],
+      getWidth: 10,
+      widthUnits: "pixels",
+      extruded: true, // ✅ makes it 3D
+      getElevation: 100, // height of extrusion
+      pickable: true,
+    }),
     //* Student homes (fixed points)
-    new ScatterplotLayer({
-      id: "student-homes",
+    // new ScatterplotLayer({
+    //   id: "student-homes",
+    //   data: students,
+    //   getPosition: (d) => Array.isArray(d.home) && d.home.length === 2 ? d.home : [0, 0],
+    //   getFillColor: (d) => hexToRgb(d.color, 100),
+    //   getRadius: 60,
+    //   radiusUnits: "meters",
+    //   pickable: false,
+    // }),
+    new ColumnLayer({
+      id: "student-homes-3d",
       data: students,
-      getPosition: (d) => d.home,
-      getFillColor: (d) => hexToRgb(d.color, 100),
-      getRadius: 60,
-      radiusUnits: "meters",
+      diskResolution: 4, // makes it square
+      radius: 50,
+      elevationScale: 1,
+      extruded: true,
+      getPosition: (d) => Array.isArray(d.home) && d.home.length === 2 ? d.home : [0, 0],
+      getFillColor: (d) => hexToRgb(d.color, 150),
       pickable: false,
     }),
     //* Trail effect behind each student, with fading opacity for motion blur
@@ -138,5 +162,15 @@ export function MapLayers({
       radiusUnits: "meters",
       pickable: false,
     }),
-  ];
+    new SimpleMeshLayer({
+      id: "school-3d",
+      data: [{ position: [SCHOOL.lng, SCHOOL.lat] }],
+      mesh: "/models/school-3d.glb",
+      getPosition: (d) => d.position,
+      getColor: [0, 0, 0],
+      sizeScale: 30,
+      loaders: [GLTFLoader],
+      pickable: false,
+    }),
+  ].filter(Boolean);
 }
