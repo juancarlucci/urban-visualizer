@@ -51,6 +51,9 @@ export default function StudentTimelineMap() {
   });
   const [mapVisible, setMapVisible] = useState(false);
   const [showVisited, setShowVisited] = useState(false);
+  const [isSliderInteracting, setIsSliderInteracting] = useState(false);
+  const [isInteractingWithControls, setIsInteractingWithControls] =
+    useState(false);
 
   const visitedNodes = useMemo(() => {
     if (!showVisited) return [];
@@ -187,6 +190,7 @@ export default function StudentTimelineMap() {
       controller={true}
       layers={layers}
       getTooltip={({ object }) => object?.name && { text: object.name }}
+      style={{ pointerEvents: isInteractingWithControls ? "none" : "auto" }}
     >
       {mapVisible && (
         <Map
@@ -195,16 +199,12 @@ export default function StudentTimelineMap() {
           mapStyle="mapbox://styles/juancarlucci/cj4ixk05q1a3x2spb44qq9cy3"
         />
       )}
-      <AlgorithmControls
-        algorithm={algorithm}
-        setAlgorithm={setAlgorithm}
-        showVisited={showVisited}
-        setShowVisited={setShowVisited}
-      />
+
       <TimelineControls
         isPlaying={isPlaying}
         onPlayPause={() => setIsPlaying((p) => !p)}
         onReverse={() => {
+          // cacheRef.current = { dijkstra: undefined, astar: undefined };
           setIsReverse((prev) => !prev);
           setStudents(
             students.map((s) => ({
@@ -218,13 +218,17 @@ export default function StudentTimelineMap() {
         currentTime={currentTime}
         onTimeChange={setTime}
         isReverse={isReverse}
+        onInteractionChange={setIsInteractingWithControls}
       >
-        <div className="text-sm font-medium text-gray-800">
-          Routing with: {algorithm.toUpperCase()} <br />
-          {isLoading || studentCount === 0
-            ? "Calculating paths..."
-            : `Avg. visited nodes: ${(totalVisited / studentCount).toFixed(1)}`}
-        </div>
+        <AlgorithmControls
+          algorithm={algorithm}
+          setAlgorithm={setAlgorithm}
+          // showVisited={showVisited}
+          // setShowVisited={setShowVisited}
+          isLoading={isLoading}
+          studentCount={studentCount}
+          totalVisited={totalVisited}
+        />
       </TimelineControls>
     </DeckGL>
   );
