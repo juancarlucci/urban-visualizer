@@ -14,6 +14,8 @@ import TimelineControls from "./TimelineControls";
 import { MapLayers } from "./MapLayers";
 import type { Student } from "@/lib/studentsStore";
 import AlgorithmControls from "./AlgorithmControls";
+import { MapController } from "@deck.gl/core";
+import { NavigationControl } from "react-map-gl";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
@@ -51,9 +53,6 @@ export default function StudentTimelineMap() {
   });
   const [mapVisible, setMapVisible] = useState(false);
   const [showVisited, setShowVisited] = useState(false);
-  const [isSliderInteracting, setIsSliderInteracting] = useState(false);
-  const [isInteractingWithControls, setIsInteractingWithControls] =
-    useState(false);
 
   const visitedNodes = useMemo(() => {
     if (!showVisited) return [];
@@ -184,52 +183,56 @@ export default function StudentTimelineMap() {
         longitude: -73.94,
         latitude: 40.75,
         zoom: 10.5,
-        pitch: 0,
-        bearing: 0,
+        pitch: 45, // <- Enables 3D angle
+        bearing: -30, // <- Optional tilt direction
       }}
-      controller={true}
+      controller={{ type: MapController, dragRotate: true }} // <- Enables tilt/pitch controls
       layers={layers}
       getTooltip={({ object }) => object?.name && { text: object.name }}
-      style={{ pointerEvents: isInteractingWithControls ? "none" : "auto" }}
     >
       {mapVisible && (
         <Map
           reuseMaps
           mapboxAccessToken={MAPBOX_TOKEN}
           mapStyle="mapbox://styles/juancarlucci/cj4ixk05q1a3x2spb44qq9cy3"
-        />
+        >
+          {" "}
+          <NavigationControl position="top-left" />
+        </Map>
       )}
-
-      <TimelineControls
-        isPlaying={isPlaying}
-        onPlayPause={() => setIsPlaying((p) => !p)}
-        onReverse={() => {
-          // cacheRef.current = { dijkstra: undefined, astar: undefined };
-          setIsReverse((prev) => !prev);
-          setStudents(
-            students.map((s) => ({
-              ...s,
-              route: [...s.route].reverse(), // Ensure immutability
-            }))
-          );
-          setTime(0);
-          timeRef.current = 0;
-        }}
-        currentTime={currentTime}
-        onTimeChange={setTime}
-        isReverse={isReverse}
-        onInteractionChange={setIsInteractingWithControls}
-      >
-        <AlgorithmControls
-          algorithm={algorithm}
-          setAlgorithm={setAlgorithm}
-          // showVisited={showVisited}
-          // setShowVisited={setShowVisited}
-          isLoading={isLoading}
-          studentCount={studentCount}
-          totalVisited={totalVisited}
-        />
-      </TimelineControls>
+      <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 w-11/12 max-w-xl z-50">
+        <div className="bg-white/90 p-4 rounded shadow space-y-2 pointer-events-auto">
+          <TimelineControls
+            isPlaying={isPlaying}
+            onPlayPause={() => setIsPlaying((p) => !p)}
+            onReverse={() => {
+              // cacheRef.current = { dijkstra: undefined, astar: undefined };
+              setIsReverse((prev) => !prev);
+              setStudents(
+                students.map((s) => ({
+                  ...s,
+                  route: [...s.route].reverse(), // Ensure immutability
+                }))
+              );
+              setTime(0);
+              timeRef.current = 0;
+            }}
+            currentTime={currentTime}
+            onTimeChange={setTime}
+            isReverse={isReverse}
+          >
+            <AlgorithmControls
+              algorithm={algorithm}
+              setAlgorithm={setAlgorithm}
+              // showVisited={showVisited}
+              // setShowVisited={setShowVisited}
+              isLoading={isLoading}
+              studentCount={studentCount}
+              totalVisited={totalVisited}
+            />
+          </TimelineControls>
+        </div>
+      </div>
     </DeckGL>
   );
 }

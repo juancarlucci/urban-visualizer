@@ -1,7 +1,7 @@
 //* TimelineControls.tsx
 //* UI panel for controlling animation state and settings like routing algorithm.
 
-import { ChangeEvent, MouseEvent, TouchEvent, useState } from "react";
+import { ChangeEvent } from "react";
 
 export default function TimelineControls({
   children,
@@ -11,7 +11,6 @@ export default function TimelineControls({
   currentTime,
   onTimeChange,
   isReverse,
-  onInteractionChange, // New prop to communicate interaction state
 }: {
   children?: React.ReactNode;
   isPlaying: boolean;
@@ -20,26 +19,10 @@ export default function TimelineControls({
   currentTime: number;
   onTimeChange: (t: number) => void;
   isReverse: boolean;
-  onInteractionChange?: (isInteracting: boolean) => void;
 }) {
-  const [isInteracting, setIsInteracting] = useState(false);
-
   const handleRangeInteraction = (e: ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
     onTimeChange(parseFloat(e.target.value));
-  };
-
-  const handleInteractionStart = (
-    e: MouseEvent<HTMLInputElement> | TouchEvent<HTMLInputElement>
-  ) => {
-    e.stopPropagation();
-    setIsInteracting(true);
-    onInteractionChange?.(true);
-  };
-
-  const handleInteractionEnd = () => {
-    setIsInteracting(false);
-    onInteractionChange?.(false);
   };
 
   return (
@@ -66,21 +49,21 @@ export default function TimelineControls({
           Reverse
         </button>
       </div>
-      <input
-        type="range"
-        min={0}
-        max={1}
-        step={0.01}
-        value={currentTime}
-        onChange={handleRangeInteraction}
-        onMouseDown={handleInteractionStart}
-        onMouseUp={handleInteractionEnd}
-        onTouchStart={handleInteractionStart}
-        onTouchEnd={handleInteractionEnd}
-        className="w-full cursor-pointer"
-        style={{ pointerEvents: "auto" }} // Ensure slider is interactive
-      />
-      {children}
+      <div className="slider-wrapper" style={{ pointerEvents: "auto" }}>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.01}
+          value={currentTime}
+          onChange={handleRangeInteraction}
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="w-full cursor-pointer"
+          style={{ pointerEvents: "auto" }} // Ensure slider is interactive
+        />
+        {children}
+      </div>
     </div>
   );
 }
