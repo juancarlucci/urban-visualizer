@@ -89,25 +89,22 @@ export default function StudentTimelineMap() {
           loadedStations.length > 0 &&
           loadedLines.length > 0
         ) {
-          if (cacheRef.current[algorithm]) {
-            const { students, debugEdges, totalVisited } =
-              cacheRef.current[algorithm]!;
-            setStudents(students.slice(0, 500));
-            setDebugEdges(debugEdges);
-            setTotalVisited(totalVisited);
-            setStudentCount(students.length);
+          const cached = cacheRef.current[algorithm];
+          if (cached) {
+            setStudents(cached.students.slice(0, 500));
+            setDebugEdges(cached.debugEdges);
+            setTotalVisited(cached.totalVisited);
+            setStudentCount(cached.students.length);
           } else {
-            generateRandomStudents(100000, stations, algorithm).then(
+            generateRandomStudents(100000, loadedStations, algorithm).then(
               ({ students, debugEdges }) => {
                 const totalVisited = students.reduce(
                   (sum, s) => sum + (s.visitedPath?.length || 0),
                   0
                 );
-                cacheRef.current[algorithm] = {
-                  students,
-                  debugEdges,
-                  totalVisited,
-                };
+                const result = { students, debugEdges, totalVisited };
+                cacheRef.current[algorithm] = result;
+
                 setStudents(students.slice(0, 500));
                 setDebugEdges(debugEdges);
                 setTotalVisited(totalVisited);
