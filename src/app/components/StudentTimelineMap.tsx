@@ -191,7 +191,7 @@ export default function StudentTimelineMap() {
         >
           <div className="text-sm font-medium text-gray-800">
             Routing with: {algorithm.toUpperCase()} <br />
-            {isLoading
+            {isLoading || studentCount === 0
               ? "Calculating paths..."
               : `Avg. visited nodes: ${(totalVisited / studentCount).toFixed(
                   1
