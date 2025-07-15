@@ -3,8 +3,8 @@ import React from "react";
 interface Props {
   algorithm: "astar" | "dijkstra";
   setAlgorithm: (algo: "astar" | "dijkstra") => void;
-  // showVisited: boolean;
-  // setShowVisited: (v: boolean) => void;
+  showVisited: boolean;
+  setShowVisited: (v: boolean) => void;
   isLoading: boolean;
   studentCount: number;
   totalVisited: number;
@@ -13,8 +13,8 @@ interface Props {
 export default function AlgorithmControls({
   algorithm,
   setAlgorithm,
-  // showVisited,
-  // setShowVisited,
+  showVisited,
+  setShowVisited,
   isLoading,
   studentCount,
   totalVisited,
@@ -31,14 +31,14 @@ export default function AlgorithmControls({
           <option value="dijkstra">Dijkstra</option>
           <option value="astar">A*</option>
         </select>
-        {/* <label className="flex items-center space-x-2">
+        <label className="flex items-center space-x-2 text-gray-800 ">
           <input
             type="checkbox"
             checked={showVisited}
             onChange={(e) => setShowVisited(e.target.checked)}
           />
           <span>Show visited</span>
-        </label> */}
+        </label>
         <div className="text-sm text-gray-800 text-right">
           Routing with: {algorithm.toUpperCase()} <br />
           {isLoading || studentCount === 0
