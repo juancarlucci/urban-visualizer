@@ -52,6 +52,7 @@ export default function StudentTimelineMap() {
     astar: undefined,
   });
   const [mapVisible, setMapVisible] = useState(false);
+  const [isSliderDragging, setIsSliderDragging] = useState(false);
   const [showVisited, setShowVisited] = useState(false);
 
   const visitedNodes = useMemo(() => {
@@ -68,7 +69,7 @@ export default function StudentTimelineMap() {
 
   useEffect(() => {
     if (stations.length > 0 && students.length > 0) {
-      const timeout = setTimeout(() => setMapVisible(true), 250); // show map shortly after
+      const timeout = setTimeout(() => setMapVisible(true), 250);
       return () => clearTimeout(timeout);
     }
   }, [stations, students]);
@@ -178,30 +179,38 @@ export default function StudentTimelineMap() {
     );
   }
   return (
-    <DeckGL
-      initialViewState={{
-        longitude: -73.94,
-        latitude: 40.75,
-        zoom: 10.5,
-        pitch: 45, // <- Enables 3D angle
-        bearing: -30, // <- Optional tilt direction
-      }}
-      controller={{ type: MapController, dragRotate: true }} // <- Enables tilt/pitch controls
-      layers={layers}
-      getTooltip={({ object }) => object?.name && { text: object.name }}
-    >
-      {mapVisible && (
+    <div className="relative h-screen w-full">
+      <DeckGL
+        initialViewState={{
+          longitude: -73.94,
+          latitude: 40.75,
+          zoom: 10.5,
+          pitch: 45,
+          bearing: -30,
+        }}
+        controller={{ type: MapController, dragRotate: true }}
+        layers={layers}
+        getTooltip={({ object }) => object?.name && { text: object.name }}
+      >
+        {isSliderDragging && (
+          <div
+            className="absolute inset-0 z-40"
+            style={{ cursor: "default", background: "transparent" }}
+            onPointerDown={(e) => e.stopPropagation()}
+          />
+        )}
+
         <Map
           reuseMaps
           mapboxAccessToken={MAPBOX_TOKEN}
           mapStyle="mapbox://styles/juancarlucci/cj4ixk05q1a3x2spb44qq9cy3"
         >
-          {" "}
           <NavigationControl position="top-left" />
         </Map>
-      )}
-      <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 w-11/12 max-w-xl z-50">
-        <div className="bg-white/90 p-4 rounded shadow space-y-2 pointer-events-auto">
+      </DeckGL>
+      {/* ✅ CONTROL PANEL OUTSIDE DeckGL */}
+      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[1000] w-11/12 max-w-xl">
+        <div className="bg-white/90 p-4 rounded shadow space-y-2">
           <TimelineControls
             isPlaying={isPlaying}
             onPlayPause={() => setIsPlaying((p) => !p)}
@@ -220,12 +229,14 @@ export default function StudentTimelineMap() {
             currentTime={currentTime}
             onTimeChange={setTime}
             isReverse={isReverse}
+            onDragStart={() => setIsSliderDragging(true)}
+            onDragEnd={() => setIsSliderDragging(false)}
           >
             <AlgorithmControls
               algorithm={algorithm}
               setAlgorithm={setAlgorithm}
-              // showVisited={showVisited}
-              // setShowVisited={setShowVisited}
+              showVisited={showVisited}
+              setShowVisited={setShowVisited}
               isLoading={isLoading}
               studentCount={studentCount}
               totalVisited={totalVisited}
@@ -233,6 +244,6 @@ export default function StudentTimelineMap() {
           </TimelineControls>
         </div>
       </div>
-    </DeckGL>
+    </div>
   );
 }
