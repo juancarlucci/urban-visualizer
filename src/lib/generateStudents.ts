@@ -80,6 +80,7 @@ export async function generateRandomStudents(
       startDelay: Math.random() * 0.2,
       isFixed: false,
       visitedPath: alexVisited.map((s) => s.coordinates),
+      home: alexHome,
     });
   }
 
@@ -128,6 +129,7 @@ export async function generateRandomStudents(
         startDelay: Math.random() * 0.2,
         isFixed: false,
         visitedPath: visited.map((s) => s.coordinates),
+        home,
       });
     }
   }
@@ -151,7 +153,7 @@ export function generateFullStudentSet(
   students: Student[];
   debugEdges: [number, number][][];
 }> {
-  return generateRandomStudents(10000, stations, algorithm);
+  return generateRandomStudents(5000, stations, algorithm);
 }
 
 function randomBetween(min: number, max: number): number {
